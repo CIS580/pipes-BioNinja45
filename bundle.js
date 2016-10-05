@@ -4,11 +4,13 @@
 /* Classes */
 const Game = require('./game');
 const EntityManager = require('./entity-manager');
+const Pipe = require('./pipe');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var entities = new EntityManager(canvas.width, canvas.height, 64);
+var pipes = [];
 var image = new Image();
 image.src = 'assets/pipes.png';
 
@@ -19,7 +21,8 @@ canvas.onclick = function(event) {
   var x = parseInt(event.clientX)-12;
   var y = parseInt(event.clientY)-16-64;
   var index = entities.getIndex(x,y);
-  //entities.addEntity();
+  if(entities.checkEntity(index) != -1) pipes[index] = new Pipe({x:parseInt(x), y:parseInt(y)}, "4");
+  entities.addEntity();
   // TODO: Place or rotate pipe tile
 }
 
@@ -66,7 +69,7 @@ function render(elapsedTime, ctx) {
 	entities.renderCells(ctx);
 }
 
-},{"./entity-manager":2,"./game":3}],2:[function(require,module,exports){
+},{"./entity-manager":2,"./game":3,"./pipe":4}],2:[function(require,module,exports){
 module.exports = exports = EntityManager;
 
 function EntityManager(width, height, cellSize) {
@@ -109,6 +112,13 @@ EntityManager.prototype.addEntity = function(entity){
 	  this.cells[index].push(entity);
 	  entity._cell = index;
   }
+}
+
+EntityManager.prototype.checkEntity= function(index){
+	if(this.cells[index].length==0){
+		return -1;
+	}
+	return 1;
 }
 
 EntityManager.prototype.renderCells = function(ctx) {
@@ -176,6 +186,68 @@ Game.prototype.loop = function(newTime) {
 
   // Flip the back buffer
   this.frontCtx.drawImage(this.backBuffer, 0, 0);
+}
+
+},{}],4:[function(require,module,exports){
+"use strict";
+
+/**
+ * @module exports the Pipe class
+ */
+module.exports = exports = Pipe;
+
+/**
+ * @constructor Pipe
+ * Creates a new Pipe object
+ * @param {Postition} position object specifying an x and y
+ */
+function Pipe(position,type) {
+  this.state = "empty";
+  this.x = position.x;
+  this.y = position.y;
+  this.width  = 64;
+  this.height = 64;
+  this.spritesheet  = new Image();
+  this.spritesheet.src = encodeURI('assets/pipes.png');
+  this.type = type;
+
+}
+
+/**
+ * @function updates the Pipe object
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ */
+Pipe.prototype.update = function(elapsedTime) {
+  this.timer += elapsedTime;
+  switch(this.state) {
+    case "walking":
+      if(this.timer > 1000/16) {
+        this.frame = (this.frame + 1) % 4;
+        this.timer = 0;
+      }
+      this.y -= 1;
+      break;
+  }
+  this.color = '#000000';
+  console.log(this._cell);
+}
+
+/**
+ * @function renders the Pipe into the provided context
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ * {CanvasRenderingContext2D} ctx the context to render into
+ */
+Pipe.prototype.render = function(time, ctx) {
+  ctx.drawImage(
+    // image
+    this.spritesheet,
+    // source rectangle
+    0, 0, this.width, this.height,
+    // destination rectangle
+    this.x, this.y, this.width, this.height
+  );
+  ctx.strokeStyle = this.color;
+  ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 },{}]},{},[1]);

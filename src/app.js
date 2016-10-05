@@ -3,11 +3,13 @@
 /* Classes */
 const Game = require('./game');
 const EntityManager = require('./entity-manager');
+const Pipe = require('./pipe');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var entities = new EntityManager(canvas.width, canvas.height, 64);
+var pipes = [];
 var image = new Image();
 image.src = 'assets/pipes.png';
 
@@ -18,7 +20,8 @@ canvas.onclick = function(event) {
   var x = parseInt(event.clientX)-12;
   var y = parseInt(event.clientY)-16-64;
   var index = entities.getIndex(x,y);
-  //entities.addEntity();
+  if(entities.checkEntity(index) != -1) pipes[index] = new Pipe({x:parseInt(x), y:parseInt(y)}, "4");
+  entities.addEntity();
   // TODO: Place or rotate pipe tile
 }
 
