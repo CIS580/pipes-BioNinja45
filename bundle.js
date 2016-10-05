@@ -3,19 +3,24 @@
 
 /* Classes */
 const Game = require('./game');
+const EntityManager = require('./entity-manager');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
+var entities = new EntityManager(canvas.width, canvas.height, 64);
 var image = new Image();
 image.src = 'assets/pipes.png';
 
-// TODO: Place the pipe tiles on the board in random order
+
 
 canvas.onclick = function(event) {
   event.preventDefault();
-  // TODO: determine which pipe tile was clicked on
-  // TODO: rotate the pipes in the pipe tile
+  var x = parseInt(event.clientX)-12;
+  var y = parseInt(event.clientY)-16-64;
+  var index = entities.getIndex(x,y);
+  //entities.addEntity();
+  // TODO: Place or rotate pipe tile
 }
 
 /**
@@ -24,8 +29,11 @@ canvas.onclick = function(event) {
  * @param {DOMHighResTimeStamp} timestamp the current time
  */
 var masterLoop = function(timestamp) {
+	
+	
   game.loop(timestamp);
   window.requestAnimationFrame(masterLoop);
+
 }
 masterLoop(performance.now());
 
@@ -55,10 +63,64 @@ function render(elapsedTime, ctx) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // TODO: Render the board
-
+	entities.renderCells(ctx);
 }
 
-},{"./game":2}],2:[function(require,module,exports){
+},{"./entity-manager":2,"./game":3}],2:[function(require,module,exports){
+module.exports = exports = EntityManager;
+
+function EntityManager(width, height, cellSize) {
+  this.cellSize = cellSize;
+  this.widthInCells = Math.ceil(width / cellSize);
+  this.heightInCells = Math.ceil(height / cellSize);
+  this.cells = [];
+  this.numberOfCells = this.widthInCells * this.heightInCells;
+  for(var i = 0; i < this.numberOfCells; i++) {
+    this.cells[i] = [];
+  }
+  this.cells[-1] = [];
+}
+
+function getIndex(x, y) {
+  var x = Math.floor(x / this.cellSize);
+  var y = Math.floor(y / this.cellSize);
+  if(x < 0 ||
+     x >= this.widthInCells ||
+     y < 0 ||
+     y >= this.heightInCells
+  ) return -1;
+  return y * this.widthInCells + x;
+}
+
+EntityManager.prototype.getIndex = function(x,y){
+var x = Math.floor(x / this.cellSize);
+  var y = Math.floor(y / this.cellSize);
+  if(x < 0 ||
+     x >= this.widthInCells ||
+     y < 0 ||
+     y >= this.heightInCells
+  ) return -1;
+  return y * this.widthInCells + x;
+}
+
+EntityManager.prototype.addEntity = function(entity){
+  var index = getIndex.call(this, entity.x, entity.y);
+  if(this.cells[index].length ==0){
+	  this.cells[index].push(entity);
+	  entity._cell = index;
+  }
+}
+
+EntityManager.prototype.renderCells = function(ctx) {
+  for(var x = 0; x < this.widthInCells; x++) {
+    for(var y = 0; y < this.heightInCells; y++) {
+      ctx.strokeStyle = '#333333';
+      ctx.strokeRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+    }
+  }
+}
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 /**

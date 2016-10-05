@@ -2,15 +2,23 @@
 
 /* Classes */
 const Game = require('./game');
+const EntityManager = require('./entity-manager');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
+var entities = new EntityManager(canvas.width, canvas.height, 64);
 var image = new Image();
 image.src = 'assets/pipes.png';
 
+
+
 canvas.onclick = function(event) {
   event.preventDefault();
+  var x = parseInt(event.clientX)-12;
+  var y = parseInt(event.clientY)-16-64;
+  var index = entities.getIndex(x,y);
+  //entities.addEntity();
   // TODO: Place or rotate pipe tile
 }
 
@@ -20,8 +28,11 @@ canvas.onclick = function(event) {
  * @param {DOMHighResTimeStamp} timestamp the current time
  */
 var masterLoop = function(timestamp) {
+	
+	
   game.loop(timestamp);
   window.requestAnimationFrame(masterLoop);
+
 }
 masterLoop(performance.now());
 
@@ -51,5 +62,5 @@ function render(elapsedTime, ctx) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // TODO: Render the board
-
+	entities.renderCells(ctx);
 }
