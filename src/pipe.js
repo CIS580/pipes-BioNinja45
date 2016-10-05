@@ -51,7 +51,7 @@ Pipe.prototype.render = function(time, ctx) {
     // image
     this.spritesheet,
     // source rectangle
-    0, 0, this.width, this.height,
+    0, 0, 30, 32,
     // destination rectangle
     this.x, this.y, this.width, this.height
   );

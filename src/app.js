@@ -20,8 +20,14 @@ canvas.onclick = function(event) {
   var x = parseInt(event.clientX)-12;
   var y = parseInt(event.clientY)-16-64;
   var index = entities.getIndex(x,y);
-  if(entities.checkEntity(index) != -1) pipes[index] = new Pipe({x:parseInt(x), y:parseInt(y)}, "4");
-  entities.addEntity();
+  if(entities.checkEntity(index) == -1) {
+	  var x2 = (index%15) * 64;
+	  var y2 = Math.floor(index/15) * 64
+	  pipes.push(new Pipe({x:x2, y:y2}, "4"));
+	  
+	entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)}, "4"));
+  }
+  
   // TODO: Place or rotate pipe tile
 }
 
@@ -51,6 +57,7 @@ masterLoop(performance.now());
 function update(elapsedTime) {
 
   // TODO: Advance the fluid
+  
 }
 
 /**
@@ -64,6 +71,10 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "#777777";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  console.log(pipes.length);
   // TODO: Render the board
 	entities.renderCells(ctx);
+	pipes.forEach(function(pipe, i){
+		pipe.render(elapsedTime,ctx);
+	});
 }
