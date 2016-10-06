@@ -7,9 +7,9 @@ module.exports = exports = Pipe;
 
 var flow  = {
 	up:false,
-	down:true,
-	left:false,
-	right:false
+	right:false,
+	down:false,
+	left:false
 }
 
 /**
@@ -43,11 +43,13 @@ function Pipe(position,type,index) {
 		flow.right=true;
 		flow.down=false;
 		flow.up=false;
+		break;
 	case "4-pipe":
 		flow.left=true;
 		flow.right=true;
 		flow.up=true;
 		flow.down=true;
+		break;
 	case "3-pipe":
 		flow.left=true;
 		flow.right=true;
@@ -64,6 +66,8 @@ function Pipe(position,type,index) {
  */
 Pipe.prototype.update = function(elapsedTime) {
 	if(this.state=="empty"){
+		
+		
 		switch(this.rotate){
 			case "0":
 				this.translateX = 0;
@@ -93,6 +97,48 @@ Pipe.prototype.update = function(elapsedTime) {
 Pipe.prototype.getFlow=function(){
 	return flow;
 }
+
+Pipe.prototype.rotateFlow=function(){
+	var flow2 = {
+			up:false,
+			right:false,
+			down:false,
+			left:false
+		} 
+		if(this.type!="2-pipe"){
+			if(flow.right==true){
+				flow2.down=true;
+			}
+			if(flow.down==true){
+				flow2.left=true;
+			}
+			if(flow.left==true){
+				flow2.up=true;
+			}
+			if(flow.up==true){
+				flow2.right=true;
+			}
+		}
+		else{
+			if(flow.right==true){
+				flow2.left=true;
+			}
+			if(flow.down==true){
+				flow2.up=true;
+			}
+			if(flow.left==true){
+				flow2.right=true;
+			}
+			if(flow.up==true){
+				flow2.down=true;
+			}
+		}
+		console.log(flow);
+		console.log(flow2);
+		flow = flow2;
+		
+}
+
 
 /**
  * @function renders the Pipe into the provided context

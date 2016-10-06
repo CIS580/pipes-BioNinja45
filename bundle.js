@@ -36,10 +36,12 @@ canvas.onclick = function(event) {
 			var x = parseInt(event.clientX)-12;
 			var y = parseInt(event.clientY)-16-64;
 			var index = entities.getIndex(x,y);
+			console.log(index);
 			if(entities.checkEntity(index) == -1) {
 				var x2 = (index%15) * 64;
 				var y2 = Math.floor(index/15) * 64;
 				var randomPipe = pipeType[Math.floor(Math.random()*pipeType.length)];
+				console.log(randomPipe);
 				pipes.push(new Pipe({x:x2, y:y2}, randomPipe,parseInt(index)));
 				entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)},randomPipe ));
 			}
@@ -49,6 +51,7 @@ canvas.onclick = function(event) {
 				pipes.forEach(function(pipe, i){
 					if(pipe.state != "static"){
 						if(index==pipe.index){
+							pipe.rotateFlow();
 							switch(pipe.rotate){
 								case "0":
 									pipe.rotate="90";
@@ -119,11 +122,31 @@ function update(elapsedTime) {
 		else{
 			pipe.state="full";
 			var flow = pipe.getFlow();
-			if(flow.down==true && pipe.index > 14){
+			if(flow.up==true && pipe.index > 14){
 				pipes.forEach(function(pipe2, i){
 					if(pipe2.index==pipe.index+15){
-						waterPipes.push(pipe2);
-						pipes.splice(i,1);
+						var flow2= pipe2.getFlow();
+						if(flow.up==true){
+							waterPipes.push(pipe2);
+							pipes.splice(i,1);
+						}
+						else{
+							gameOver();
+						}
+					}
+				});
+			}
+			else if(flow.down==true && pipe.index < 180){
+				pipes.forEach(function(pipe2, i){
+					if(pipe2.index==pipe.index-15){
+						var flow2= pipe2.getFlow();
+						if(flow.up==true){
+							waterPipes.push(pipe2);
+							pipes.splice(i,1);
+						}
+						else{
+							gameOver();
+						}
 					}
 				});
 			}
@@ -143,7 +166,7 @@ function update(elapsedTime) {
 	});
   increment++;
 }
-
+function gameOver(){}
 
 /**
   * @function render
@@ -316,9 +339,9 @@ module.exports = exports = Pipe;
 
 var flow  = {
 	up:false,
-	down:true,
-	left:false,
-	right:false
+	right:false,
+	down:false,
+	left:false
 }
 
 /**
@@ -352,11 +375,13 @@ function Pipe(position,type,index) {
 		flow.right=true;
 		flow.down=false;
 		flow.up=false;
+		break;
 	case "4-pipe":
 		flow.left=true;
 		flow.right=true;
 		flow.up=true;
 		flow.down=true;
+		break;
 	case "3-pipe":
 		flow.left=true;
 		flow.right=true;
@@ -373,6 +398,8 @@ function Pipe(position,type,index) {
  */
 Pipe.prototype.update = function(elapsedTime) {
 	if(this.state=="empty"){
+		
+		
 		switch(this.rotate){
 			case "0":
 				this.translateX = 0;
@@ -402,6 +429,48 @@ Pipe.prototype.update = function(elapsedTime) {
 Pipe.prototype.getFlow=function(){
 	return flow;
 }
+
+Pipe.prototype.rotateFlow=function(){
+	var flow2 = {
+			up:false,
+			right:false,
+			down:false,
+			left:false
+		} 
+		if(this.type!="2-pipe"){
+			if(flow.right==true){
+				flow2.down=true;
+			}
+			if(flow.down==true){
+				flow2.left=true;
+			}
+			if(flow.left==true){
+				flow2.up=true;
+			}
+			if(flow.up==true){
+				flow2.right=true;
+			}
+		}
+		else{
+			if(flow.right==true){
+				flow2.left=true;
+			}
+			if(flow.down==true){
+				flow2.up=true;
+			}
+			if(flow.left==true){
+				flow2.right=true;
+			}
+			if(flow.up==true){
+				flow2.down=true;
+			}
+		}
+		console.log(flow);
+		console.log(flow2);
+		flow = flow2;
+		
+}
+
 
 /**
  * @function renders the Pipe into the provided context

@@ -35,10 +35,12 @@ canvas.onclick = function(event) {
 			var x = parseInt(event.clientX)-12;
 			var y = parseInt(event.clientY)-16-64;
 			var index = entities.getIndex(x,y);
+			console.log(index);
 			if(entities.checkEntity(index) == -1) {
 				var x2 = (index%15) * 64;
 				var y2 = Math.floor(index/15) * 64;
 				var randomPipe = pipeType[Math.floor(Math.random()*pipeType.length)];
+				console.log(randomPipe);
 				pipes.push(new Pipe({x:x2, y:y2}, randomPipe,parseInt(index)));
 				entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)},randomPipe ));
 			}
@@ -48,6 +50,7 @@ canvas.onclick = function(event) {
 				pipes.forEach(function(pipe, i){
 					if(pipe.state != "static"){
 						if(index==pipe.index){
+							pipe.rotateFlow();
 							switch(pipe.rotate){
 								case "0":
 									pipe.rotate="90";
@@ -118,11 +121,31 @@ function update(elapsedTime) {
 		else{
 			pipe.state="full";
 			var flow = pipe.getFlow();
-			if(flow.down==true && pipe.index > 14){
+			if(flow.up==true && pipe.index > 14){
 				pipes.forEach(function(pipe2, i){
 					if(pipe2.index==pipe.index+15){
-						waterPipes.push(pipe2);
-						pipes.splice(i,1);
+						var flow2= pipe2.getFlow();
+						if(flow.up==true){
+							waterPipes.push(pipe2);
+							pipes.splice(i,1);
+						}
+						else{
+							gameOver();
+						}
+					}
+				});
+			}
+			else if(flow.down==true && pipe.index < 180){
+				pipes.forEach(function(pipe2, i){
+					if(pipe2.index==pipe.index-15){
+						var flow2= pipe2.getFlow();
+						if(flow.up==true){
+							waterPipes.push(pipe2);
+							pipes.splice(i,1);
+						}
+						else{
+							gameOver();
+						}
 					}
 				});
 			}
@@ -142,7 +165,7 @@ function update(elapsedTime) {
 	});
   increment++;
 }
-
+function gameOver(){}
 
 /**
   * @function render
