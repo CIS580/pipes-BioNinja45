@@ -5,12 +5,7 @@
  */
 module.exports = exports = Pipe;
 
-var flow  = {
-	up:false,
-	right:false,
-	down:false,
-	left:false
-}
+
 
 /**
  * @constructor Pipe
@@ -24,40 +19,53 @@ function Pipe(position,type,index) {
   this.width  = 64;
   this.height = 64;
   this.type = type;
-  this.spritesheet  = new Image();
+  this.spritesheet = new Image();
   this.spritesheet.src = encodeURI('assets/' + this.type + '.png');
   this.translateX = 0;
   this.translateY = 0;
   this.rotate = "0";
   this.index = index;
   this.frame = 0;
-  switch(this.type){
-	case "2-pipe-90":
-		flow.down=true;
-		flow.up=false;
-		flow.right=true;
-		flow.left=false;
-		break;
-	case "2-pipe":
-		flow.left=true;
-		flow.right=true;
-		flow.down=false;
-		flow.up=false;
-		break;
-	case "4-pipe":
-		flow.left=true;
-		flow.right=true;
-		flow.up=true;
-		flow.down=true;
-		break;
-	case "3-pipe":
-		flow.left=true;
-		flow.right=true;
-		flow.down=true;
-		flow.up=false;
-	default:
-		break;
+  this.up=false;
+  this.down=false;
+  this.left=false;
+  this.right=false;
+  if(this.type=="2-pipe-90"){
+		this.down=true;
+		this.up=false;
+		this.right=true;
+		this.left=false;
+		
   }
+  else if(this.type=="2-pipe"){
+		this.left=true;
+		this.right=true;
+		this.down=false;
+		this.up=false;
+		
+  }
+  else if(this.type=="4-pipe"){
+		this.left=true;
+		this.right=true;
+		this.up=true;
+		this.down=true;
+		
+  }
+  else if(this.type=="3-pipe"){
+		this.left=true;
+		this.right=true;
+		this.down=true;
+		this.up=false;
+		
+  }
+  else if(this.type=="end-pipe"){
+		this.left=false;
+		this.right=false;
+		this.down=true;
+		this.up=false;	
+  }
+	
+  
 }
 
 /**
@@ -66,8 +74,6 @@ function Pipe(position,type,index) {
  */
 Pipe.prototype.update = function(elapsedTime) {
 	if(this.state=="empty"){
-		
-		
 		switch(this.rotate){
 			case "0":
 				this.translateX = 0;
@@ -94,48 +100,45 @@ Pipe.prototype.update = function(elapsedTime) {
 		this.frame=2;
 	}
 }
-Pipe.prototype.getFlow=function(){
-	return flow;
+
+Pipe.prototype.getFlow = function(){
+	return {right:this.right,left:this.left,up:this.up,down:this.down};
 }
 
 Pipe.prototype.rotateFlow=function(){
-	var flow2 = {
-			up:false,
-			right:false,
-			down:false,
-			left:false
-		} 
+		this.left2=false;
+		this.right2=false;
+		this.up2=false;
+		this.down2=false;
 		if(this.type!="2-pipe"){
-			if(flow.right==true){
-				flow2.down=true;
+			if(this.right==true){
+				this.down2=true;
 			}
-			if(flow.down==true){
-				flow2.left=true;
+			if(this.down==true){
+				this.left2=true;
 			}
-			if(flow.left==true){
-				flow2.up=true;
+			if(this.left==true){
+				this.up2=true;
 			}
-			if(flow.up==true){
-				flow2.right=true;
-			}
-		}
-		else{
-			if(flow.right==true){
-				flow2.left=true;
-			}
-			if(flow.down==true){
-				flow2.up=true;
-			}
-			if(flow.left==true){
-				flow2.right=true;
-			}
-			if(flow.up==true){
-				flow2.down=true;
+			if(this.up==true){
+				this.right2=true;
 			}
 		}
-		console.log(flow);
-		console.log(flow2);
-		flow = flow2;
+		else if(this.type=="2-pipe"){
+			if(this.right==true){
+				this.up2=true;
+				this.down2=true;
+			}
+			if(this.down==true){
+				this.left2=true;
+				this.right2=true;
+			}
+			
+		}
+		this.down=this.down2;
+		this.left=this.left2;
+		this.up=this.up2;
+		this.right=this.right2;
 		
 }
 

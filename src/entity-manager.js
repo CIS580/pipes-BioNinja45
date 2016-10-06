@@ -43,7 +43,10 @@ EntityManager.prototype.addEntity = function(entity){
 }
 
 EntityManager.prototype.checkEntity= function(index){
-	if(this.cells[index].length==0){
+	if(this.cells[index] == null){
+		return -1;
+	}
+	else if(this.cells[index].length == 0){
 		return -1;
 	}
 	return 1;
