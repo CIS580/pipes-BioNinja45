@@ -11,24 +11,74 @@ var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var entities = new EntityManager(canvas.width, canvas.height, 64);
 var pipes = [];
+var waterPipes=[];
 var image = new Image();
 image.src = 'assets/pipes.png';
+var increment = 0;
+var startPipe = new Pipe({x:64,y:64},"end-pipe",16);
+startPipe.state="static";
 
+waterPipes.push(startPipe);
+entities.addEntity(startPipe);
+var pipeType = ["4-pipe","2-pipe","2-pipe-90","2-pipe","2-pipe-90","2-pipe","2-pipe-90","3-pipe","2-pipe","2-pipe-90","3-pipe","2-pipe","2-pipe-90","3-pipe","2-pipe","2-pipe-90","3-pipe"];
+
+
+
+canvas.oncontextmenu = function() {
+     return false;  
+} 
 
 
 canvas.onclick = function(event) {
   event.preventDefault();
-  var x = parseInt(event.clientX)-12;
-  var y = parseInt(event.clientY)-16-64;
-  var index = entities.getIndex(x,y);
-  if(entities.checkEntity(index) == -1) {
-	  var x2 = (index%15) * 64;
-	  var y2 = Math.floor(index/15) * 64
-	  pipes.push(new Pipe({x:x2, y:y2}, "4"));
-	  
-	entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)}, "4"));
+  switch(event.which){
+		case 1:
+			var x = parseInt(event.clientX)-12;
+			var y = parseInt(event.clientY)-16-64;
+			var index = entities.getIndex(x,y);
+			if(entities.checkEntity(index) == -1) {
+				var x2 = (index%15) * 64;
+				var y2 = Math.floor(index/15) * 64;
+				var randomPipe = pipeType[Math.floor(Math.random()*pipeType.length)];
+				pipes.push(new Pipe({x:x2, y:y2}, randomPipe,parseInt(index)));
+				entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)},randomPipe ));
+			}
+			else if(entities.checkEntity(index) == 1) {
+				var x2 = (index%15) * 64;
+				var y2 = Math.floor(index/15) * 64;
+				pipes.forEach(function(pipe, i){
+					if(pipe.state != "static"){
+						if(index==pipe.index){
+							switch(pipe.rotate){
+								case "0":
+									pipe.rotate="90";
+									break;
+								case "90":
+									pipe.rotate="180";
+									break;
+								case "180":
+									pipe.rotate="270";
+									break;
+								case "270":
+									pipe.rotate="0";
+									break;
+							}
+						}
+					}
+				});
+			}
+			
+			break;
+		case 2:
+			var x = parseInt(event.clientX)-12;
+			var y = parseInt(event.clientY)-16-64;
+			var index = entities.getIndex(x,y);
+			
+			break;
+		default:
+			window.alert("k");
+			break;
   }
-  
   // TODO: Place or rotate pipe tile
 }
 
@@ -58,8 +108,42 @@ masterLoop(performance.now());
 function update(elapsedTime) {
 
   // TODO: Advance the fluid
-  
+  if(increment==50){
+	  waterPipes.forEach(function(pipe, i){
+		  if(pipe.state=="empty" || pipe.state=="static"){
+		  pipe.state="semi-full";
+	  }
+	  else if(pipe.state=="empty" || pipe.state=="static"){
+		pipe.state="semi-full";
+		}
+		else{
+			pipe.state="full";
+			var flow = pipe.getFlow();
+			if(flow.down==true && pipe.index > 14){
+				pipes.forEach(function(pipe2, i){
+					if(pipe2.index==pipe.index+15){
+						waterPipes.push(pipe2);
+						pipes.splice(i,1);
+					}
+				});
+			}
+			
+		}
+	  });
+	  
+	  
+	  
+		increment=0;
+  }
+  pipes.forEach(function(pipe, i){
+		pipe.update(elapsedTime);
+	});
+	waterPipes.forEach(function(pipe, i){
+		pipe.update(elapsedTime);
+	});
+  increment++;
 }
+
 
 /**
   * @function render
@@ -72,12 +156,35 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "#777777";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  console.log(pipes.length);
   // TODO: Render the board
 	entities.renderCells(ctx);
+	waterPipes.forEach(function(pipe, i){
+		pipe.render(elapsedTime,ctx);
+	});
 	pipes.forEach(function(pipe, i){
 		pipe.render(elapsedTime,ctx);
 	});
+}
+
+
+function getXandY(){
+	var yes = canvas.onclick = function(event) {
+	event.preventDefault();
+	var x = parseInt(event.clientX)-12;
+	var y = parseInt(event.clientY)-16-64;
+	return {x:parseInt(x), y:parseInt(y)};
+}
+
+}
+window.onkeydown = function(event)
+{
+	event.preventDefault();
+	switch(event.keyCode)
+	{
+		case 82:
+			
+			break;
+	}
 }
 
 },{"./entity-manager":2,"./game":3,"./pipe":4}],2:[function(require,module,exports){
@@ -207,21 +314,57 @@ Game.prototype.loop = function(newTime) {
  */
 module.exports = exports = Pipe;
 
+var flow  = {
+	up:false,
+	down:true,
+	left:false,
+	right:false
+}
+
 /**
  * @constructor Pipe
  * Creates a new Pipe object
  * @param {Postition} position object specifying an x and y
  */
-function Pipe(position,type) {
+function Pipe(position,type,index) {
   this.state = "empty";
   this.x = position.x;
   this.y = position.y;
   this.width  = 64;
   this.height = 64;
-  this.spritesheet  = new Image();
-  this.spritesheet.src = encodeURI('assets/pipes.png');
   this.type = type;
-
+  this.spritesheet  = new Image();
+  this.spritesheet.src = encodeURI('assets/' + this.type + '.png');
+  this.translateX = 0;
+  this.translateY = 0;
+  this.rotate = "0";
+  this.index = index;
+  this.frame = 0;
+  switch(this.type){
+	case "2-pipe-90":
+		flow.down=true;
+		flow.up=false;
+		flow.right=true;
+		flow.left=false;
+		break;
+	case "2-pipe":
+		flow.left=true;
+		flow.right=true;
+		flow.down=false;
+		flow.up=false;
+	case "4-pipe":
+		flow.left=true;
+		flow.right=true;
+		flow.up=true;
+		flow.down=true;
+	case "3-pipe":
+		flow.left=true;
+		flow.right=true;
+		flow.down=true;
+		flow.up=false;
+	default:
+		break;
+  }
 }
 
 /**
@@ -229,18 +372,35 @@ function Pipe(position,type) {
  * {DOMHighResTimeStamp} time the elapsed time since the last frame
  */
 Pipe.prototype.update = function(elapsedTime) {
-  this.timer += elapsedTime;
-  switch(this.state) {
-    case "walking":
-      if(this.timer > 1000/16) {
-        this.frame = (this.frame + 1) % 4;
-        this.timer = 0;
-      }
-      this.y -= 1;
-      break;
-  }
-  this.color = '#000000';
-  console.log(this._cell);
+	if(this.state=="empty"){
+		switch(this.rotate){
+			case "0":
+				this.translateX = 0;
+				this.translateY = 0; 
+				break;
+			case "90":
+				this.translateX = 64;
+				this.translateY = 0;
+				break;
+			case "180":
+				this.translateX=64;
+				this.translateY=64;
+				break;
+			case "270":
+				this.translateX=0;
+				this.translateY=64;
+				break;
+		}
+	}
+	else if(this.state=="semi-full"){
+		this.frame=1;
+	}
+	else if(this.state=="full"){
+		this.frame=2;
+	}
+}
+Pipe.prototype.getFlow=function(){
+	return flow;
 }
 
 /**
@@ -249,14 +409,20 @@ Pipe.prototype.update = function(elapsedTime) {
  * {CanvasRenderingContext2D} ctx the context to render into
  */
 Pipe.prototype.render = function(time, ctx) {
+	
+	ctx.save();
+	ctx.translate(this.x+this.translateX,this.y+this.translateY);
+	ctx.rotate(this.rotate * Math.PI / 180);
+	
   ctx.drawImage(
     // image
     this.spritesheet,
     // source rectangle
-    0, 0, 30, 32,
+    32*this.frame, 0, 32, 32,
     // destination rectangle
-    this.x, this.y, this.width, this.height
+    0, 0, this.width, this.height
   );
+  ctx.restore();
   ctx.strokeStyle = this.color;
   ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
