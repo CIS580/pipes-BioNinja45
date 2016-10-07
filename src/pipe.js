@@ -13,6 +13,7 @@ module.exports = exports = Pipe;
  * @param {Postition} position object specifying an x and y
  */
 function Pipe(position,type,index) {
+	this.time=0;
   this.state = "empty";
   this.x = position.x;
   this.y = position.y;
@@ -99,6 +100,7 @@ Pipe.prototype.update = function(elapsedTime) {
 	else if(this.state=="full"){
 		this.frame=2;
 	}
+	
 }
 
 Pipe.prototype.getFlow = function(){

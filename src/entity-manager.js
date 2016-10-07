@@ -52,6 +52,10 @@ EntityManager.prototype.checkEntity= function(index){
 	return 1;
 }
 
+EntityManager.prototype.getEntity = function(index){
+	return this.cells[index];
+}
+
 EntityManager.prototype.renderCells = function(ctx) {
   for(var x = 0; x < this.widthInCells; x++) {
     for(var y = 0; y < this.heightInCells; y++) {

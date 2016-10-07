@@ -11,30 +11,33 @@ var game = new Game(canvas, update, render);
 var entities = new EntityManager(canvas.width, canvas.height, 64);
 var pipes = [];
 var waterPipes=[];
+var score = 0;
+var level = 1;
 var image = new Image();
 image.src = 'assets/pipes.png';
 var increment = -900;
-var startPipe = new Pipe({x:64,y:64},"end-pipe",16);
-var endPipe = new Pipe({x:768,y:704},"end-pipe",177);
-endPipe.rotateFlow();
-endPipe.rotateFlow();
+var incrementHit=100;
+var startPipe = new Pipe({x:128,y:64},"end-pipe",17);
+var endPipe = new Pipe({x:704,y:576},"end-pipe",146);
 startPipe.state="static";
-endPipe.state="empty";
-endPipe.rotate="180";
-waterPipes.push(endPipe);
+startPipe.time=-1;
+endPipe.state="end";
+pipes.push(endPipe);
 waterPipes.push(startPipe);
-
+pipes.push(startPipe);
 entities.addEntity(startPipe);
 entities.addEntity(endPipe);
 var pipeType = ["4-pipe","2-pipe","2-pipe-90","3-pipe","2-pipe","2-pipe-90","3-pipe","2-pipe","2-pipe-90","2-pipe","2-pipe-90"];
 var placeAudio = new Audio("assets/place.wav");
 var rotateAudio = new Audio("assets/rotate.wav");
-//var myAudio = new Audio("assets/background.m4a");
-//myAudio.loop = true;
+var loseAudio = new Audio("assets/lose.wav");
+var winAudio = new Audio("assets/win.wav");
+var myAudio = new Audio("assets/background_music.m4a");
+myAudio.loop = true;
 //myAudio.play();
 var GameOver=false;
 var randomPipeType = pipeType[Math.floor(Math.random()*pipeType.length)];
-var randomPipe = new Pipe({x:896, y:0}, randomPipeType,14);
+var randomPipe = new Pipe({x:896, y:0}, "4-pipe",14);
 var randomPipes = [];
 randomPipes.push(randomPipe);
 entities.addEntity(randomPipe);
@@ -50,6 +53,7 @@ canvas.onclick = function(event) {
   if(GameOver==true) return;
   switch(event.which){
 		case 1:
+		
 			var x = parseInt(event.clientX)-12;
 			var y = parseInt(event.clientY)-16-64;
 			var index = entities.getIndex(x,y);
@@ -60,12 +64,12 @@ canvas.onclick = function(event) {
 				randomPipes[randomPipes.length-1].y=y2;
 				randomPipes[randomPipes.length-1].index=index;
 				pipes.push(randomPipes[randomPipes.length-1]);
-				//pipes.push(randomPipe);
+				console.log(pipes[2].length);
+				
 				entities.addEntity(new Pipe({x:parseInt(x), y:parseInt(y)},randomPipe ));
 				randomPipeType="";
 				randomPipe=null;
 				var randomPipeType2 = pipeType[Math.floor(Math.random()*pipeType.length)];
-				console.log(randomPipeType2.toString());
 				randomPipe = new Pipe({x:896, y:0},randomPipeType2.toString(),14);
 				randomPipes.push(randomPipe);
 				pipes.forEach(function(pipe2, i){
@@ -80,7 +84,7 @@ canvas.onclick = function(event) {
 				var x2 = (index%15) * 64;
 				var y2 = Math.floor(index/15) * 64;
 				pipes.forEach(function(pipe, i){
-					if(pipe.state != "static"){
+					if(pipe.state != "static" && pipe.state!="end"){
 						
 						if(parseInt(index)==parseInt(pipe.index)){
 							
@@ -145,7 +149,11 @@ masterLoop(performance.now());
 function update(elapsedTime) {
  if(GameOver==true)return;
   // TODO: Advance the fluid
-  if(increment==100){
+  if(increment==10){
+	  var check=true;
+	  if(waterPipes[waterPipes.length-1].state=="end"){
+		  victory();
+	  }
 	  waterPipes.forEach(function(pipe, i){
 		  if(pipe.state=="empty" || pipe.state=="static"){
 			  pipe.state="semi-full";
@@ -153,62 +161,111 @@ function update(elapsedTime) {
 		else if( pipe.state=="semi-full"){
 			pipe.state="full";
 		}
-		else if(pipe.state=="full"){
-			var flow = pipe.getFlow();
-			if(flow.down==true && pipe.index > 14 ){
-				if(entities.checkEntity(pipe+15) != 1) gameOver();
-				pipes.forEach(function(pipe2, i){
+		else if(pipe.state=="full" || pipe.state=="done"){
+			if(pipe.time<1){
+				var flow = pipe.getFlow();
+				console.log(pipe.index);
+				console.log(pipe.time);
+				if(flow.down==true && pipe.index > 14 ){
+					if(pipe.state!="done")check=false;
+					if(waterPipes[i+15] !=null){
+						if(waterPipes[i+15].state=="done")check=true;
+					}
+					pipes.forEach(function(pipe2, i){
+						if(parseInt(pipe2.index)==parseInt(pipe.index)+15){
+							
+							var flow2 = pipe2.getFlow();
+							if(flow2.up==true){
+								waterPipes.push(pipe2);
+								pipes.splice(i,1);
+								check=true;
+								return;
+							}
+						}
+					});
+				}
+				console.log("first");
+				console.log(GameOver);
+				if(check==false){gameOver();}
+				console.log(GameOver);
+				if(flow.up==true && pipe.index < 180 ){
 					
-					if(parseInt(pipe2.index)==parseInt(pipe.index)+15){
-						var flow2 = pipe2.getFlow();
-						if(flow2.up==true){
-							waterPipes.push(pipe2);
-							pipes.splice(i,1);
-							return;
-						}
+					if(pipe.state!="done")check=false;
+					if(waterPipes[i-15] !=null){
+						if(waterPipes[i-15].state=="done")check=true;
 					}
-				});
-			}
-			if(flow.up==true && pipe.index < 180 ){
-				if(entities.checkEntity(pipe-15) != 1) gameOver();
-				pipes.forEach(function(pipe2, i){
-					if(parseInt(pipe2.index)==parseInt(pipe.index)-15){
-						var flow2= pipe2.getFlow();
-						if(flow2.down==true){
-							waterPipes.push(pipe2);
-							pipes.splice(i,1);
+					pipes.forEach(function(pipe2, i){
+						if(parseInt(pipe2.index)==parseInt(pipe.index)-15){
+							
+							var flow2= pipe2.getFlow();
+							if(flow2.down==true){
+								waterPipes.push(pipe2);
+								pipes.splice(i,1);
+								check=true;
+								return;
+							}
 						}
+					});
+					
+				}
+				console.log("second");
+				console.log(GameOver);
+				if(check==false){gameOver();}
+				console.log(GameOver);
+				if(flow.right==true && (pipe.index+1) %15 != 0){
+					if(pipe.state!="done")check=false;
+					console.log("k"+pipe.index);
+					console.log("k2 "+(pipe.index+1));
+					var temp = entities.getEntity((pipe.index+1));
+					if(temp.length !=0){
+						console.log(temp[0].state);
+						if(temp[0].state=="done")check=true;
 					}
-				});
+					pipes.forEach(function(pipe2, i){
+						if(parseInt(pipe2.index)==parseInt(pipe.index)+1){
+							
+							var flow2= pipe2.getFlow();
+							if(flow2.left==true){
+								waterPipes.push(pipe2);
+								pipes.splice(i,1);
+								check=true;
+								return;
+							}
+						}
+					});
+				}
+				console.log("third");
+				console.log(GameOver);
+				if(check==false){gameOver();}
+				console.log(GameOver);
+				if(flow.left==true && (pipe.index) %15 != 0){
+					
+					if(pipe.state!="done")check=false;
+					if(waterPipes[i-1] !=null){
+						if(waterPipes[i-1].state=="done")check=true;
+					}
+					pipes.forEach(function(pipe2, i){
+						
+						if(parseInt(pipe2.index)==parseInt(pipe.index)-1){
+							var flow2= pipe2.getFlow();
+							if(flow2.right==true){
+								waterPipes.push(pipe2);
+								pipes.splice(i,1);
+								check=true;
+								return;
+							}
+						}
+					});
+					
+				}
 				
+				console.log("fourth");
+				console.log(GameOver);
+				if(check==false){gameOver();}
+				console.log(GameOver);
+				pipe.state="done";
+				pipe.time++;
 			}
-			if(flow.right==true && (pipe.index+1) %15 != 0){
-				if(entities.checkEntity(pipe+1) != 1) gameOver();
-				pipes.forEach(function(pipe2, i){
-					if(parseInt(pipe2.index)==parseInt(pipe.index)+1){
-						var flow2= pipe2.getFlow();
-						if(flow2.left==true){
-							waterPipes.push(pipe2);
-							pipes.splice(i,1);
-						}
-					}
-				});
-			}
-			
-			if(flow.left==true && (pipe.index) %15 != 0){
-				if(entities.checkEntity(pipe-1) != 1) gameOver();
-				pipes.forEach(function(pipe2, i){
-					if(parseInt(pipe2.index)==parseInt(pipe.index)-1){
-						var flow2= pipe2.getFlow();
-						if(flow2.right==true){
-							waterPipes.push(pipe2);
-							pipes.splice(i,1);
-						}
-					}
-				});
-				gameOver();
-			}
-			
 		}
 	  });
 	  
@@ -226,9 +283,41 @@ function update(elapsedTime) {
 }
 function gameOver(){
 	//GameOver=true;
-	return;
+	//pipes=[];
+	//pipes.push(endPipe);
+	//waterPipes=[];
+	//waterPipes.push(startPipe);
+	//level=1;
+	//score = 0;
+	//increment = -900;
+	//incrementHit = 100;
 }
 
+function victory(){
+	score+=waterPipes.length+1;
+	level+=1;
+	pipes=[];
+	pipes.push(endPipe);
+	waterPipes=[];
+	waterPipes.push(startPipe);
+	increment = -900;
+	incrementHit-=10
+	entities = new EntityManager(canvas.width, canvas.height, 64);
+	startPipe = new Pipe({x:128,y:64},"end-pipe",17);
+	endPipe = new Pipe({x:704,y:576},"end-pipe",146);
+	startPipe.state="static";
+	startPipe.time=-1;
+	endPipe.state="end";
+	pipes.push(endPipe);
+	waterPipes.push(startPipe);
+	pipes.push(startPipe);
+	entities.addEntity(startPipe);
+	entities.addEntity(endPipe);
+	randomPipes.push(randomPipe);
+	entities.addEntity(randomPipe);
+	pipes.push(randomPipe);
+	winAudio.play();
+}
 /**
   * @function render
   * Renders the current game state into a back buffer.
@@ -243,11 +332,25 @@ function render(elapsedTime, ctx) {
 		ctx.fillText("GAME OVER",80,200);
 		return
 	}
-  ctx.fillStyle = "#777777";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+	
+	  ctx.fillStyle = "#777777";
+	  ctx.fillRect(0, 0, canvas.width, canvas.height);
+	  entities.renderCells(ctx);
+		ctx.fillStyle = "white";
+		ctx.font = "30px Arial";
+		ctx.fillText("Next Pipe:",750,40);
+		ctx.font = "20px Arial";
+		ctx.fillText("Level: " + level,20,40);
+		ctx.fillText("Score: " + level,150,40);
+		ctx.font = "35px Arial";
+		if(increment<0){
+			ctx.fillText("Water Flows in: " + (Math.floor((increment*-1)/100)+1),300,40);
+		}
+		else{
+			ctx.fillText("Water is flowing!",300,40);
+		}
   // TODO: Render the board
-	entities.renderCells(ctx);
+	
 	waterPipes.forEach(function(pipe, i){
 		pipe.render(elapsedTime,ctx);
 	});
