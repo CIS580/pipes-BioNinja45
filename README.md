@@ -14,11 +14,11 @@ For this assignment, you will be creating a clone of [Pipe Mania](https://en.wik
 3. At the start of the level, 'fluid' begins to flow from the start pipe.  If the fluid manages to reach the end of assembled pipes, the game is lost (10 points).
 7. The speed at which fluid fills pipes increases as the player advances in level (10 points).
 8. Placing pipes, rotating pipes, finishing a level, and loosing the game should all have sound effects that play when these events happen (10 points).
-
-
-
-
 10. Instructions for playing the game should appear in-game or on the page (10 points).
+
+
+
+
 
 ### Extra Credit
 1. Add at least 3 additional kinds of pipes with special attributes (i.e. a reservoir that fills up more slowly) (10 points).
